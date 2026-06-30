@@ -1,9 +1,16 @@
 from typing import Any
 from mcp.server.fastmcp import FastMCP
 from course_planner import Place, plan_course
+import os
 
 
-mcp = FastMCP("kakao-course-planner")
+mcp = FastMCP(
+    "kakao-course-planner",
+    host="0.0.0.0",
+    port=int(os.getenv("PORT", "8000")),
+    streamable_http_path="/mcp",
+)
+
 
 def to_place(item: dict[str, Any]):
     return Place(
