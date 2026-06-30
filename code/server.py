@@ -45,7 +45,7 @@ def plan_kakao_course(
     return plan_course(
         places=parsed_places,
         area_hint=area_hint,
-        start_time=start_time,
+        start=start_time,
         max_count=max_count,
         top_n=top_n,
     )
