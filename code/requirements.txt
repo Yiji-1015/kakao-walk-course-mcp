@@ -1,3 +1,4 @@
 requests
 pydantic
-dotenv
+python-dotenv
+mcp
