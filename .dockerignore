@@ -1,9 +1,0 @@
-.git
-.venv
-env
-__pycache__
-*.pyc
-.env
-.env.*
-!.env.example
-code/API_test.ipynb
