@@ -64,6 +64,11 @@ def plan_kakao_course(
     Use fixed_time only for reservations or fixed appointments in HH:MM format.
     area_hint is a Korean locality such as "연남동", "강남역", or "성수".
     start_time is optional and only adds clock times to the returned schedule.
+
+    Treat the returned route as a distance-based recommendation. When explaining
+    it to the user, add common-sense notes if the route contains repeated meal
+    stops, similar food categories, repeated cafes, or an unusual order. Keep
+    the route result intact, but mention practical alternatives when appropriate.
     """
     if not places:
         return {
