@@ -2,6 +2,8 @@ from typing import Any
 from mcp.server.fastmcp import FastMCP
 from course_planner import Place, plan_course
 from pydantic import BaseModel, Field
+from starlette.requests import Request
+from starlette.responses import JSONResponse, Response
 import os
 
 
@@ -11,6 +13,12 @@ mcp = FastMCP(
     port=int(os.getenv("PORT", "8080")),
     streamable_http_path="/mcp",
 )
+
+
+@mcp.custom_route("/", methods=["GET"], include_in_schema=False)
+@mcp.custom_route("/healthz", methods=["GET"], include_in_schema=False)
+async def health_check(request: Request) -> Response:
+    return JSONResponse({"status": "ok", "service": "kakao-course-planner"})
 
 
 class PlaceCandidate(BaseModel):
