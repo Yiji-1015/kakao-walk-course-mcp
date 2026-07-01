@@ -1,6 +1,7 @@
 from typing import Any
 from mcp.server.fastmcp import FastMCP
 from course_planner import Place, plan_course
+from pydantic import BaseModel, Field
 import os
 
 
@@ -12,49 +13,79 @@ mcp = FastMCP(
 )
 
 
-def to_place(item: dict[str, Any]):
+class PlaceCandidate(BaseModel):
+    name: str = Field(description="Place name to search with Kakao Local API.")
+    fixed_time: str | None = Field(
+        default=None,
+        description="Optional reservation or appointment time in HH:MM format.",
+    )
+
+
+def to_place(item: PlaceCandidate | dict[str, Any]):
+    if isinstance(item, dict):
+        name = item.get("name")
+        fixed_time = item.get("fixed_time")
+    else:
+        name = item.name
+        fixed_time = item.fixed_time
+
+    if not isinstance(name, str) or not name.strip():
+        raise ValueError("장소 객체에는 문자열 name 필드가 필요합니다.")
+
+    if fixed_time is not None and not isinstance(fixed_time, str):
+        raise ValueError("fixed_time은 '20:00' 같은 문자열이어야 합니다.")
+
     return Place(
-        name=item["name"],
-        fixed_time=item.get("fixed_time"),
+        name=name.strip(),
+        fixed_time=fixed_time.strip() if fixed_time else None,
     )
 
 
 @mcp.tool()
 def plan_kakao_course(
-    places: list[dict[str, Any]],
+    places: list[PlaceCandidate],
     area_hint: str | None = None,
     start_time: str | None = None,
     max_count: int = 5,
-    top_n: int = 50,
 ):
     """
-    후보 장소 목록을 받아 도보 기준 카카오 코스를 추천한다.
+    Create a walkable Kakao course from candidate places.
 
-    사용자가 단톡방에서 공유한 맛집/카페/술집 후보를 말하면,
-    호스트 LLM은 장소명을 추출해서 places에 넣어야 한다.
-
-    places는 장소 객체 리스트다.
-    예:
-    [
-      {"name": "한성돈까스"},
-      {"name": "냐벱인다낭", "fixed_time": "20:00"}
-    ]
-
-    fixed_time은 해당 장소에 반드시 그 시각쯤 도착해야 하는 예약/약속 시간이다.
-    area_hint는 검색 보정을 위한 지역명이다. 예: "위례", "연남동".
-    start_time은 선택 입력이다. 없으면 실제 시각 대신 상대 소요시간만 반환한다.
-
-    결과는 추천 순서, 총 도보 거리/시간, 장소별 도착/체류 시간,
-    검색 실패 장소, 카카오맵 도보 경로 링크를 포함한다.
+    Use this when the user gives restaurant, cafe, bar, or activity candidates
+    and wants a reasonable walking route. Pass places as objects with a name.
+    Use fixed_time only for reservations or fixed appointments in HH:MM format.
+    area_hint is a Korean locality such as "연남동", "강남역", or "성수".
+    start_time is optional and only adds clock times to the returned schedule.
     """
-    parsed_places = [to_place(item) for item in places]
+    if not places:
+        return {
+            "ok": False,
+            "error": "places에는 최소 1개 이상의 장소가 필요합니다.",
+            "not_found": [],
+        }
+
+    if max_count < 1 or max_count > 5:
+        return {
+            "ok": False,
+            "error": "max_count는 1 이상 5 이하이어야 합니다.",
+            "not_found": [],
+        }
+
+    try:
+        parsed_places = [to_place(item) for item in places]
+    except ValueError as exc:
+        return {
+            "ok": False,
+            "error": str(exc),
+            "not_found": [],
+        }
 
     return plan_course(
         places=parsed_places,
         area_hint=area_hint,
         start=start_time,
         max_count=max_count,
-        top_n=top_n,
+        top_n=50,
     )
 
 
