@@ -8,7 +8,7 @@ import os
 mcp = FastMCP(
     "kakao-course-planner",
     host="0.0.0.0",
-    port=int(os.getenv("PORT", "8000")),
+    port=int(os.getenv("PORT", "8080")),
     streamable_http_path="/mcp",
 )
 
